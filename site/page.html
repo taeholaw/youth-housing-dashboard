@@ -217,6 +217,20 @@
         <div class="yh-chart" id="ch-le" data-source="lease_end"></div>
       </div>
     </div>
+    <div class="yh-card" id="card-le-sites">
+      <h3>매각 · 리파이낸싱 수요가 가장 가까운 사업장</h3>
+      <p class="note">입주 · 준공 사업장을 8년 가정 의무임대 종료일이 가까운 순으로 정렬했습니다. 매각 · 대환 대상이 되는 것은 주로 민간임대분입니다(공공임대분은 SH 소유). 남은 기간은 원자료 기준일부터 계산했으며, 실제 의무임대 기간(8년 또는 10년)은 사업자 등록 시점에 따라 다르므로 개별 확인이 필요합니다.</p>
+      <div class="yh-tools">
+        <div class="yh-seg" role="group" aria-label="기간" id="le-range"><button type="button" data-y="3" aria-pressed="true">3년 이내</button><button type="button" data-y="5" aria-pressed="false">5년 이내</button><button type="button" data-y="99" aria-pressed="false">전체</button></div>
+        <span class="cnt" id="le-cnt"></span>
+      </div>
+      <div class="yh-tbox" style="max-height:480px">
+        <table id="tb-le" data-source="lease_end_sites" data-row-key="no">
+          <thead><tr><th class="n" data-field="no">연번</th><th data-field="gu">자치구</th><th data-field="stn">역</th><th data-field="addr">위치</th><th class="n" data-field="pri">민간임대</th><th class="n" data-field="tot">전체</th><th data-field="base_date">입주(기준)</th><th data-field="end8">종료(8년)</th><th class="n" data-field="months8">남은 기간</th><th data-field="end10">종료(10년)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <section class="yh-sec" id="list">
@@ -794,5 +808,43 @@ dash.onData(() => {
         .on('mouseleave', () => YH.hideTip(t));
     });
   });
+})();
+</script>
+
+<script>
+// ---------- 매각 · 리파이낸싱 도래 사업장 표 ----------
+dash.calc('lease_end_sites', {
+  title: '의무임대 종료 도래 사업장',
+  description: '입주·준공 사업장별 입주일(없으면 사용승인일) + 8년 / + 10년 종료일과 원자료 기준일부터 남은 개월 수',
+  inputs: ['projects', 'basis'],
+  fn: (projects, basis) => {
+    const asOf = basis[0].as_of_ts;
+    const plus = (d, y) => { const [a, b, c] = d.split('-').map(Number); return `${a + y}-${String(b).padStart(2, '0')}-${String(c).padStart(2, '0')}`; };
+    const months = (d) => Math.round((Date.parse(d) - asOf) / 2629800000);
+    return projects.filter((p) => (p.stage === '입주' || p.stage === '준공') && (p.move || p.apr)).map((p) => {
+      const base = p.move || p.apr; const e8 = plus(base, 8), e10 = plus(base, 10);
+      return { no: Number(p.no), gu: p.gu, stn: p.stn, addr: p.addr, pri: Number(p.pri), tot: Number(p.tot), stage: p.stage, base_date: base, base_kind: p.move ? '입주일' : '사용승인일', end8: e8, end10: e10, months8: months(e8), months10: months(e10) };
+    }).sort((a, b) => a.end8.localeCompare(b.end8) || a.no - b.no);
+  },
+});
+(() => {
+  let yrs = 3;
+  const seg = document.getElementById('le-range');
+  seg.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (!b) return; yrs = Number(b.dataset.y); seg.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+  const fmtM = (m) => { if (m < 0) return '종료'; const y = Math.floor(m / 12), r = m % 12; return (y ? y + '년 ' : '') + r + '개월'; };
+  const draw = () => {
+    const d = dash.data('lease_end_sites'); const tb = document.querySelector('#tb-le tbody');
+    if (d.status !== 'ok') { if (d.status === 'error') tb.replaceChildren(); return; }
+    const rows = d.data.filter((r) => r.months8 <= yrs * 12);
+    document.getElementById('le-cnt').textContent = `${YH.fmt(rows.length)}곳 · 민간임대 ${YH.fmt(d3.sum(rows, (r) => r.pri))}세대 · 전체 ${YH.fmt(d3.sum(rows, (r) => r.tot))}세대`;
+    tb.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = r.no;
+      const cls = r.months8 <= 24 ? 'n bad' : r.months8 <= 36 ? 'n warn' : 'n';
+      const base = document.createElement('span'); base.textContent = r.base_date; if (r.base_kind !== '입주일') { const sm = document.createElement('span'); sm.className = 'muted'; sm.textContent = ' (사용승인)'; base.appendChild(sm); }
+      [[r.no, 'n'], [r.gu], [r.stn], [r.addr, 'muted'], [YH.fmt(r.pri), 'n'], [YH.fmt(r.tot), 'n'], [base], [r.end8], [fmtM(r.months8), cls], [r.end10, 'muted']].forEach(([v, c]) => { const e = document.createElement('td'); if (c) e.className = c; if (v instanceof Node) e.appendChild(v); else e.textContent = v; tr.appendChild(e); });
+      return tr;
+    }));
+  };
+  dash.onData(draw);
 })();
 </script>
