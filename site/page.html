@@ -100,7 +100,7 @@
     <div class="yh-grid">
       <div class="yh-card" id="card-dur">
         <h3>착공 연도별 착공 → 사용승인 기간</h3>
-        <p class="note">사용승인까지 끝난 사업장의 중위값(개월). 막대 위 숫자는 표본 사업장 수.</p>
+        <p class="note">사용승인까지 끝난 사업장의 중위값(개월). 막대에 올리면 표본 사업장 수가 보입니다.</p>
         <div class="yh-chart" id="ch-dur" data-source="duration"></div>
       </div>
       <div class="yh-card" id="card-risk">
@@ -384,7 +384,7 @@ dash.onData(() => {
     svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
     const x0 = d3.scaleBand(rows.map((r) => r.year), [m.l, W - m.r]).paddingInner(0.22).paddingOuter(0.05);
     const x1 = d3.scaleBand(S.map(([s]) => s), [0, x0.bandwidth()]).padding(0.08);
-    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8)); YH.axisClean(gx);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((v) => (x0.bandwidth() < 44 ? "'" + v.slice(2) : v))); YH.axisClean(gx);
     rows.forEach((r) => {
       const g = svg.append('g').attr('transform', `translate(${x0(r.year)},0)`);
       S.forEach(([s], i) => { const v = r[key(s)]; g.append('rect').attr('x', x1(s)).attr('width', x1.bandwidth()).attr('y', y(v)).attr('height', Math.max(0, y(0) - y(v))).attr('rx', 3).attr('fill', dash.colors[i]); });
