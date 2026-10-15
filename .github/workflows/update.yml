@@ -33,15 +33,23 @@ jobs:
         run: |
           python scripts/scrape_projects.py
           echo "result=$(python -c "import json;print(json.load(open('data/meta.json'))['last_result'])")" >> "$GITHUB_OUTPUT"
-      - name: 변경분 커밋
+      - name: 원자료가 바뀐 날에만 커밋
         run: |
           git config user.name "youth-housing-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data/
-          if git diff --cached --quiet; then echo "변경 없음"; else
+          if git diff --quiet -- data/projects.json; then
+            echo "사업장 데이터 변경 없음 — 커밋하지 않음 (확인 시각은 배포본에만 반영)"
+          else
+            git add data/
             git commit -m "data: 청년안심주택 원자료 갱신 $(date -u -d '+9 hours' '+%Y-%m-%d %H:%M') KST"
             git push
           fi
+      - name: 배포용 데이터 전달
+        uses: actions/upload-artifact@v4
+        with:
+          name: data
+          path: data/
+          retention-days: 3
       - name: 수집 실패 시 경고
         if: steps.scrape.outcome == 'failure'
         run: |
@@ -57,6 +65,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - name: 최신 수집 결과 받기
+        uses: actions/download-artifact@v4
+        with:
+          name: data
+          path: data/
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
