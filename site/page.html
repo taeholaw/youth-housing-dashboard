@@ -27,6 +27,12 @@
 .yh-map-gulabel { fill: var(--color-fg-muted); font-size: 10.5px; pointer-events: none; paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; stroke-linejoin: round; }
 .yh-map-pt { cursor: pointer; transition: opacity .15s; }
 .yh-map-pt:hover { opacity: 1 !important; }
+.yh-zoom { position: absolute; top: 8px; right: 8px; display: grid; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; background: var(--color-panel); box-shadow: var(--cds-shadow-popover); }
+.yh-zoom button { font: inherit; font-size: 16px; line-height: 1; width: 34px; height: 32px; border: 0; border-bottom: 1px solid var(--color-border-line); background: transparent; color: var(--color-fg); cursor: pointer; }
+.yh-zoom button:last-child { border-bottom: 0; font-size: 14px; }
+.yh-zoom button:disabled { color: var(--color-fg-muted); opacity: .45; cursor: default; }
+.yh-zoom button:hover:not(:disabled) { background: var(--cds-chart-grid); }
+.yh-zhint { position: absolute; left: 8px; top: 8px; max-width: calc(100% - 60px); font-size: 11px; color: var(--color-fg-muted); pointer-events: none; }
 .yh-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-sm); counter-reset: st; }
 .yh-flow li { position: relative; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: grid; gap: 6px; align-content: start; background: var(--color-bg); counter-increment: st; }
 .yh-flow li::before { content: counter(st); position: absolute; top: 10px; right: 12px; font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); color: var(--color-fg-muted); }
@@ -678,16 +684,17 @@ dash.calc('map_points', {
     const fc = { type: 'FeatureCollection', features: gu.data };
     const proj = d3.geoMercator().fitExtent([[8, 8], [W - 8, H - 8]], fc);
     const path = d3.geoPath(proj);
-    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`).style('touch-action', 'none').style('cursor', 'grab');
+    const zg = svg.append('g');
     const rows = pts.data.filter((p) => on.has(p.stage));
     const byGu = d3.rollup(rows, (v) => d3.sum(v, (d) => d.tot), (d) => d.gu);
-    svg.append('g').selectAll('path').data(gu.data).join('path').attr('class', (f) => 'yh-map-gu' + (byGu.has(f.properties.name) ? ' on' : '')).attr('d', path);
-    if (W >= 420) svg.append('g').selectAll('text').data(gu.data).join('text').attr('class', 'yh-map-gulabel').attr('text-anchor', 'middle').attr('transform', (f) => `translate(${path.centroid(f)})`).text((f) => f.properties.name);
+    zg.append('g').selectAll('path').data(gu.data).join('path').attr('class', (f) => 'yh-map-gu' + (byGu.has(f.properties.name) ? ' on' : '')).attr('d', path);
+    const gl = zg.append('g').style('display', W >= 420 ? null : 'none'); gl.selectAll('text').data(gu.data).join('text').attr('class', 'yh-map-gulabel').attr('text-anchor', 'middle').attr('transform', (f) => `translate(${path.centroid(f)})`).text((f) => f.properties.name);
     const r = d3.scaleSqrt([0, d3.max(pts.data, (d) => d.tot)], [0, W < 500 ? 11 : 17]);
-    const g = svg.append('g');
+    const g = zg.append('g');
     rows.sort((a, b) => b.tot - a.tot).forEach((p) => {
       const [x, y] = proj([p.lon, p.lat]);
-      const c = g.append('circle').attr('class', 'yh-map-pt').attr('cx', x).attr('cy', y).attr('r', Math.max(2.5, r(p.tot)))
+      const c = g.append('circle').attr('class', 'yh-map-pt').attr('cx', x).attr('cy', y).attr('r', Math.max(2.5, r(p.tot))).attr('data-r', Math.max(2.5, r(p.tot))).attr('data-sw', p.stall ? 2.5 : 1)
         .attr('fill', YH.stageColor(p.stage)).attr('fill-opacity', 0.72)
         .attr('stroke', p.stall ? 'var(--color-bad)' : 'var(--color-panel)').attr('stroke-width', p.stall ? 2.5 : 1);
       c.on('mousemove', (ev) => YH.showTip(box, t, ev, `연번 ${p.no} · ${p.gu} ${p.stn}`, [
@@ -698,6 +705,26 @@ dash.calc('map_points', {
       ])).on('mouseleave', () => YH.hideTip(t))
         .on('click', () => { const q = document.getElementById('q'); const fs = document.getElementById('fstage'); fs.value = ''; q.value = p.addr; q.dispatchEvent(new Event('input')); document.getElementById('list').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     });
+    // 확대 · 이동: 버튼, 더블클릭, 두 손가락, Ctrl/⌘ + 휠 (일반 휠은 페이지 스크롤에 양보)
+    const apply = (tr) => {
+      zg.attr('transform', tr);
+      g.selectAll('circle').attr('r', function () { return this.dataset.r / Math.sqrt(tr.k); }).attr('stroke-width', function () { return this.dataset.sw / tr.k; });
+      zg.selectAll('.yh-map-gu').attr('stroke-width', 1 / tr.k);
+      gl.selectAll('text').style('font-size', 10.5 / tr.k + 'px').style('stroke-width', 3 / tr.k + 'px');
+      gl.style('display', W >= 420 || tr.k >= 2 ? null : 'none');
+    };
+    const zoom = d3.zoom().scaleExtent([1, 8]).translateExtent([[0, 0], [W, H]]).extent([[0, 0], [W, H]])
+      .filter((ev) => (ev.type === 'wheel' ? ev.ctrlKey || ev.metaKey : !ev.button))
+      .on('start', () => svg.style('cursor', 'grabbing')).on('end', () => svg.style('cursor', 'grab'))
+      .on('zoom', (ev) => { YH.hideTip(t); window.YH_MAP_T = ev.transform; apply(ev.transform); zbtn.querySelector('[data-z=reset]').disabled = ev.transform.k === 1; });
+    svg.call(zoom);
+    const zbtn = document.createElement('div'); zbtn.className = 'yh-zoom';
+    [['in', '+', '확대'], ['out', '−', '축소'], ['reset', '⟲', '원래 크기']].forEach(([k, txt, lab]) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.z = k; b.textContent = txt; b.setAttribute('aria-label', lab); b.title = lab; zbtn.appendChild(b); });
+    zbtn.addEventListener('click', (ev) => { const k = ev.target.closest('button')?.dataset.z; if (!k) return; const sel = svg.transition().duration(250); if (k === 'in') sel.call(zoom.scaleBy, 1.8); else if (k === 'out') sel.call(zoom.scaleBy, 1 / 1.8); else sel.call(zoom.transform, d3.zoomIdentity); });
+    box.appendChild(zbtn);
+    const hint = document.createElement('div'); hint.className = 'yh-zhint'; hint.textContent = '확대: + 버튼 · 더블클릭 · 두 손가락 · Ctrl(⌘)+휠, 끌어서 이동'; box.appendChild(hint);
+    const saved = window.YH_MAP_T && window.YH_MAP_T.k > 1 && window.YH_MAP_W === W ? window.YH_MAP_T : d3.zoomIdentity;
+    window.YH_MAP_W = W; svg.call(zoom.transform, saved);
     const shown = rows.length, total = pts.data.length;
     let cap = box.querySelector('.yh-mapcap'); cap = document.createElement('div'); cap.className = 'yh-mapcap'; cap.style.cssText = 'position:absolute;left:8px;bottom:6px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)';
     cap.textContent = `${YH.fmt(shown)}곳 · ${YH.fmt(d3.sum(rows, (d) => d.tot))}세대 표시` + (total < dash.data('projects').data.length ? ` (위치 미확정 ${dash.data('projects').data.length - total}곳 제외)` : '');
