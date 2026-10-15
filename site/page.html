@@ -1,0 +1,579 @@
+<style>
+#dash-root { --dash-gutter: clamp(16px, 3vw, 40px); }
+.yh { font-family: var(--font-anthropic-sans); color: var(--color-fg); max-width: 1280px; margin-inline: auto; display: grid; gap: var(--cds-gap-xl); font-variant-numeric: tabular-nums; }
+.yh-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0 0 var(--cds-gap-xs); }
+.yh-head p { margin: 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); line-height: 1.55; }
+.yh-take { color: var(--color-fg) !important; margin-top: var(--cds-gap-sm) !important; }
+.yh-head .yh-meta { font-size: var(--cds-font-size-caption); margin-top: var(--cds-gap-xs); }
+.yh-meta button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline; text-decoration-color: var(--color-border-line); text-underline-offset: 2px; cursor: pointer; }
+.yh-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: var(--cds-gap-md); }
+.yh-kpi { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: grid; gap: var(--cds-gap-xs); align-content: start; }
+.yh-kpi .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yh-kpi .val { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.1; }
+.yh-kpi .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yh-kpi .sub b { font-weight: 500; color: var(--color-fg); }
+.yh-sec h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+.yh-sec > p { margin: 0 0 var(--cds-gap-md); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.yh-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: var(--cds-gap-md); }
+.yh-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); display: grid; gap: var(--cds-gap-sm); align-content: start; min-width: 0; }
+.yh-card h3 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.yh-card .note { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.5; }
+.yh-chart { position: relative; min-height: 260px; }
+.yh-chart.tall { min-height: 420px; }
+.yh-chart svg text { font-family: var(--font-anthropic-sans); }
+.yh-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 5; display: none; }
+.yh-tip .t { color: var(--cds-text-secondary); margin-bottom: 2px; }
+.yh-tip .r { display: flex; gap: 6px; align-items: center; }
+.yh-tip .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+.yh-legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yh-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.yh-legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.yh-seg { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; justify-self: start; }
+.yh-seg button { font: inherit; font-size: var(--cds-font-size-caption); background: transparent; color: var(--color-fg-muted); border: 0; padding: 4px 12px; cursor: pointer; }
+.yh-seg button[aria-pressed=true] { background: var(--color-border-line); color: var(--color-fg); }
+.yh-tbox { max-height: 520px; overflow: auto; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.yh-tbox.short { max-height: none; }
+.yh table { border-collapse: collapse; width: 100%; font-size: var(--cds-font-size-caption); }
+.yh th, .yh td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.yh th { position: sticky; top: 0; background: var(--color-panel); font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); z-index: 1; white-space: nowrap; }
+.yh th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.yh td.n, .yh th.n { text-align: right; }
+.yh tr:last-child td { border-bottom: 0; }
+.yh .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; border: 1px solid var(--color-border-line); white-space: nowrap; }
+.yh .bad { color: var(--color-bad); }
+.yh .warn { color: var(--color-warn); }
+.yh .ok { color: var(--color-ok); }
+.yh .muted { color: var(--color-fg-muted); }
+.yh-tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; }
+.yh-tools input, .yh-tools select { font: inherit; font-size: var(--cds-font-size-caption); color: var(--color-fg); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 5px 9px; }
+.yh-tools input { min-width: 14rem; flex: 1 1 14rem; max-width: 22rem; }
+.yh-tools .cnt { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yh a { color: inherit; text-decoration: underline; text-decoration-color: var(--color-border-line); text-underline-offset: 2px; }
+.yh-foot { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.6; border-top: 1px solid var(--color-border-line); padding-top: var(--cds-pad-md); }
+.yh-foot ul { margin: 4px 0 0; padding-left: 1.2em; }
+.yh-fail { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: inherit; height: 100%; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.yh-fail::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+</style>
+
+<div class="yh">
+  <header class="yh-head" id="top">
+    <h1>서울 청년안심주택 사업 현황</h1>
+    <p>서울시 '청년안심주택(구 역세권 청년주택) 사업추진현황'(<span data-source="basis" data-field="as_of_label" data-row="0">—</span> 기준) 사업장 전수와, 청약 경쟁률·정책·PF 이슈를 함께 정리했습니다.</p>
+    <p class="yh-meta">원자료 최종 확인 <span data-source="basis" data-field="checked_at" data-row="0">—</span> · <a id="src-pdf" href="https://news.seoul.go.kr/citybuild/archives/502414" target="_blank" rel="noopener noreferrer">서울시 원문</a><span class="yh-dl" hidden> · <button type="button" id="dl-csv">사업장 목록 CSV 받기</button></span></p>
+    <p class="yh-take dash-skeleton" data-source="headline" data-field="text" data-row="0"></p>
+  </header>
+
+  <section class="yh-kpis" id="kpis" aria-label="핵심 지표">
+    <div class="yh-kpi"><span class="lbl">누적 사업장 · 세대</span><span class="val dash-skeleton" data-source="kpi" data-field="units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="sites" data-row="0"></b>개 사업장 · 공공 <b data-source="kpi" data-field="pub_share" data-row="0"></b></span></div>
+    <div class="yh-kpi"><span class="lbl">입주 완료</span><span class="val dash-skeleton" data-source="kpi" data-field="occ_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="occ_sites" data-row="0"></b>개 사업장</span></div>
+    <div class="yh-kpi"><span class="lbl">준공 · 입주 전</span><span class="val dash-skeleton" data-source="kpi" data-field="done_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="done_sites" data-row="0"></b>개 사업장</span></div>
+    <div class="yh-kpi"><span class="lbl">공사 중 (착공신고)</span><span class="val dash-skeleton" data-source="kpi" data-field="uc_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="uc_sites" data-row="0"></b>개 사업장</span></div>
+    <div class="yh-kpi"><span class="lbl">착공 3년 이상 · 사용승인 전</span><span class="val bad dash-skeleton" data-source="kpi" data-field="stall_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="stall_sites" data-row="0"></b>개 사업장 · 기준일 <span data-source="basis" data-field="as_of_day" data-row="0">—</span></span></div>
+    <div class="yh-kpi"><span class="lbl">인가 후 미착공</span><span class="val dash-skeleton" data-source="kpi" data-field="pre_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="pre_sites" data-row="0"></b>개 사업장</span></div>
+  </section>
+
+  <section class="yh-sec" id="pipeline">
+    <h2>공급 파이프라인</h2>
+    <p>인허가 → 착공 → 사용승인 흐름. 같은 사업장이 해마다 다음 단계로 넘어가므로 막대를 더하면 안 됩니다.</p>
+    <div class="yh-grid">
+      <div class="yh-card" id="card-year">
+        <h3>연도별 인허가 · 착공 · 사용승인</h3>
+        <p class="note">원자료의 인허가일 · 착공신고일 · 사용승인일 기준. <span data-source="basis" data-field="partial_note" data-row="0"></span></p>
+        <div class="yh-seg" role="group" aria-label="단위"><button type="button" data-unit="units" aria-pressed="true">세대</button><button type="button" data-unit="n" aria-pressed="false">사업장 수</button></div>
+        <div class="yh-legend" id="leg-year"></div>
+        <div class="yh-chart" id="ch-year" data-source="byyear"></div>
+      </div>
+      <div class="yh-card" id="card-gu">
+        <h3>자치구별 세대 · 단계</h3>
+        <p class="note">세대 수 기준 내림차순. 공사 중·미착공 물량이 큰 구가 향후 2~3년 입주 집중 지역입니다.</p>
+        <div class="yh-legend" id="leg-gu"></div>
+        <div class="yh-chart tall" id="ch-gu" data-source="bygu"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="yh-sec" id="risk">
+    <h2>지연 · PF 리스크</h2>
+    <p>착공 후 사용승인까지 걸리는 기간이 길어지는 중이며, 오래 멈춘 사업장일수록 이자 부담과 보증 문제가 커집니다.</p>
+    <div class="yh-grid">
+      <div class="yh-card" id="card-dur">
+        <h3>착공 연도별 착공 → 사용승인 기간</h3>
+        <p class="note">사용승인까지 끝난 사업장의 중위값(개월). 막대 위 숫자는 표본 사업장 수.</p>
+        <div class="yh-chart" id="ch-dur" data-source="duration"></div>
+      </div>
+      <div class="yh-card" id="card-risk">
+        <h3>착공 후 장기 미준공 사업장</h3>
+        <p class="note">원자료 단계가 '착공신고'인 27곳을 착공 경과 연수 순으로 정렬(원자료 기준일 기준). 사용승인일이 기재된 곳은 단계 표기만 늦게 반영된 것입니다.</p>
+        <div class="yh-tbox" style="max-height:420px">
+          <table id="tb-risk" data-source="risk" data-row-key="no">
+            <thead><tr><th class="n" data-field="no">연번</th><th data-field="gu">자치구</th><th data-field="stn">역</th><th class="n" data-field="tot">세대</th><th data-field="start">착공신고</th><th class="n" data-field="years">경과(년)</th><th data-field="flag">상태</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="yh-sec" id="demand">
+    <h2>수요 · 청약</h2>
+    <p>공급이 줄어드는 동안 공공임대 청약 경쟁률은 차수마다 올랐습니다.</p>
+    <div class="yh-grid">
+      <div class="yh-card" id="card-comp">
+        <h3>공공임대(SH) 차수별 청약 경쟁률</h3>
+        <p class="note">언론 보도 수치. 2026년 차수는 공급 호수만 확인되어 빈 막대로 표시했습니다.</p>
+        <div class="yh-chart" id="ch-comp" data-source="competition"></div>
+      </div>
+      <div class="yh-card" id="card-permit">
+        <h3>인허가 건수: 원자료 vs 보도</h3>
+        <p class="note">보도 수치에는 이후 취소된 사업장이 포함됩니다(누적 150곳 중 15곳 취소). 원자료는 현재 남아 있는 135곳만 담고 있습니다.</p>
+        <div class="yh-tbox short">
+          <table id="tb-permit" data-source="permit_compare" data-row-key="year">
+            <thead><tr><th data-field="year">연도</th><th class="n" data-field="source_n">원자료(현존)</th><th class="n" data-field="reported">보도(당시)</th><th class="n" data-field="gap">차이</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="yh-sec" id="policy">
+    <h2>정책 · 보증 · PF 이슈</h2>
+    <p>보증금 미반환 사고, HUG 감정평가 변경, 금융지원 확대가 사업성의 핵심 변수입니다. 정확한 내용은 각 출처 원문에서 확인하십시오.</p>
+    <div class="yh-card">
+      <div class="yh-tbox" style="max-height:560px">
+        <table id="tb-policy" data-source="timeline" data-row-key="title">
+          <thead><tr><th data-field="date">시점</th><th data-field="tag">분야</th><th data-field="title">항목</th><th data-field="detail">내용</th><th data-field="status">상태</th><th data-field="source">출처</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="yh-sec" id="list">
+    <h2>사업장 목록</h2>
+    <p>서울시 원자료 사업장 전체. 머리글을 누르면 정렬됩니다.</p>
+    <div class="yh-card">
+      <div class="yh-tools">
+        <input type="search" id="q" placeholder="자치구 · 역 · 주소 검색" aria-label="사업장 검색">
+        <select id="fstage" aria-label="단계"><option value="">전체 단계</option><option>입주</option><option>준공</option><option>착공신고</option><option>인가완료</option></select>
+        <span class="cnt" id="cnt"></span>
+      </div>
+      <div class="yh-tbox">
+        <table id="tb-proj" data-source="projects" data-row-key="no">
+          <thead><tr>
+            <th class="n" data-field="no"><button type="button" data-k="no">연번</button></th>
+            <th data-field="gu"><button type="button" data-k="gu">자치구</button></th>
+            <th data-field="stn"><button type="button" data-k="stn">역</button></th>
+            <th data-field="addr">위치</th>
+            <th class="n" data-field="tot"><button type="button" data-k="tot">합계</button></th>
+            <th class="n" data-field="pub"><button type="button" data-k="pub">공공</button></th>
+            <th class="n" data-field="pri"><button type="button" data-k="pri">민간</button></th>
+            <th data-field="stage"><button type="button" data-k="stage">단계</button></th>
+            <th data-field="permit"><button type="button" data-k="permit">인허가</button></th>
+            <th data-field="start"><button type="button" data-k="start">착공신고</button></th>
+            <th data-field="apr"><button type="button" data-k="apr">사용승인</button></th>
+            <th data-field="move"><button type="button" data-k="move">입주</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer class="yh-foot">
+    <b>데이터 기준 · 확인 필요 사항</b>
+    <ul>
+      <li>사업장 데이터: 서울시 주택분야 누리집 「청년안심주택(구 역세권 청년주택) 사업추진현황」 월말 기준 PDF를 표 그대로 옮기며, 새 PDF가 올라오면 자동으로 다시 읽습니다. 사업장 명칭은 원자료에 없어 자치구 · 역 · 주소로 구분합니다. 합계 = 공공 + 민간 + 분양을 전 행 검산했습니다.</li>
+      <li>연번 131(구로구 천왕역)은 원자료 인허가일이 2025-05-02이나, 언론은 '2025년 인허가 0건'으로 보도했습니다 → 변경인가 여부 확인 필요.</li>
+      <li>연번 100(성동구 장한평역)의 인허가일은 원자료에 '2023-11.23'으로 적혀 있어 2023-11-23으로 읽었습니다. 연번 30 · 47은 인허가 · 착공일이 비어 있습니다.</li>
+      <li>연번 13 · 20 · 27 · 48 등은 입주일이 사용승인일보다 빠르게 기재되어 있습니다(원자료 그대로).</li>
+      <li>경쟁률 · 정책 항목은 언론 보도와 서울시 발표를 정리한 것으로, 각 행의 출처 링크에서 원문을 확인하십시오. 이 화면은 투자 · 여신 판단의 근거가 아닙니다.</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+// ---------- 공통 ----------
+window.YH = (() => {
+  const fmt = d3.format(',');
+  const num = (v) => { if (v === null || v === undefined || v === '') return 0; const x = Number(String(v).replace(/,/g, '')); return isFinite(x) ? x : 0; };
+  const failBox = (el) => { el.replaceChildren(); const d = document.createElement('div'); d.className = 'yh-fail'; d.textContent = 'Failed to load'; el.appendChild(d); };
+  const tip = (box) => { let t = box.querySelector(':scope > .yh-tip'); if (!t) { t = document.createElement('div'); t.className = 'yh-tip'; box.appendChild(t); } return t; };
+  const showTip = (box, t, ev, title, rows) => {
+    t.replaceChildren();
+    const h = document.createElement('div'); h.className = 't'; h.textContent = title; t.appendChild(h);
+    rows.forEach(([color, name, val]) => { const r = document.createElement('div'); r.className = 'r'; if (color) { const s = document.createElement('i'); s.className = 'sw'; s.style.background = color; r.appendChild(s); } const n = document.createElement('span'); n.textContent = name; const v = document.createElement('b'); v.style.fontWeight = 500; v.style.marginLeft = 'auto'; v.textContent = val; r.append(n, v); t.appendChild(r); });
+    t.style.display = 'block';
+    const bb = box.getBoundingClientRect(); const tw = t.offsetWidth, th = t.offsetHeight;
+    let x = ev.clientX - bb.left + 12, y = ev.clientY - bb.top - th - 8;
+    if (x + tw > bb.width) x = ev.clientX - bb.left - tw - 12; if (x < 0) x = 0; if (y < 0) y = ev.clientY - bb.top + 14;
+    t.style.left = x + 'px'; t.style.top = y + 'px';
+  };
+  const hideTip = (t) => { t.style.display = 'none'; };
+  const stageColor = (s) => ({ '입주': dash.colors[0], '준공': dash.colors[1], '착공신고': dash.colors[2], '인가완료': dash.colors[3] })[s];
+  const STAGES = ['입주', '준공', '착공신고', '인가완료'];
+  const legend = (el, items) => { el.replaceChildren(...items.map(([c, n]) => { const s = document.createElement('span'); const i = document.createElement('i'); i.style.background = c; s.append(i, document.createTextNode(n)); return s; })); };
+  const axisClean = (g) => g.attr('font-size', null).attr('font-family', null).call((g) => g.selectAll('text').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)')).call((g) => g.selectAll('line').attr('stroke', 'var(--cds-chart-grid)')).call((g) => g.select('.domain').attr('stroke', 'var(--cds-chart-axis)'));
+  return { fmt, num, failBox, tip, showTip, hideTip, stageColor, STAGES, legend, axisClean };
+})();
+</script>
+
+<script>
+// ---------- 계산 ----------
+dash.calc('basis', {
+  title: '원자료 기준일',
+  description: '원자료 PDF의 기준월과 그 말일, 최종 확인 시각',
+  inputs: ['meta'],
+  fn: (meta) => {
+    const m = meta[0] || {};
+    const [y, mo] = String(m.as_of_month || '').split('-').map(Number);
+    const last = y ? new Date(Date.UTC(y, mo, 0)).getUTCDate() : null;
+    return [{
+      as_of_label: y ? `${y}.${mo}월말` : '—',
+      as_of_day: y ? `${y}.${mo}.${last}` : '—',
+      as_of_ts: y ? Date.UTC(y, mo - 1, last) : null,
+      year: y ? String(y) : '', month: mo || 0,
+      partial_note: y && mo < 12 ? `${y}년은 ${mo}월까지.` : '',
+      checked_at: String(m.checked_at || '—').replace('T', ' ').slice(0, 16),
+      pdf_url: m.pdf_url || '',
+    }];
+  },
+});
+
+dash.calc('kpi', {
+  title: '핵심 지표',
+  description: '사업장 단계별 세대·사업장 수, 착공 3년 이상 미준공 물량(원자료 기준월 말일 기준)',
+  inputs: ['projects', 'basis'],
+  fn: (projects, basis) => {
+    const n = (v) => Number(String(v || 0).replace(/,/g, '')) || 0;
+    const asOf = basis[0].as_of_ts;
+    const sum = (f) => projects.filter(f).reduce((a, r) => a + n(r.tot), 0);
+    const cnt = (f) => projects.filter(f).length;
+    const st = (s) => (r) => r.stage === s;
+    const stall = (r) => r.stage === '착공신고' && r.start && !r.apr && (asOf - Date.parse(r.start)) / 31557600000 >= 3;
+    const units = sum(() => true);
+    return [{
+      units, sites: projects.length,
+      pub_share: Math.round(projects.reduce((a, r) => a + n(r.pub), 0) / units * 1000) / 10 + '%',
+      occ_units: sum(st('입주')), occ_sites: cnt(st('입주')),
+      done_units: sum(st('준공')), done_sites: cnt(st('준공')),
+      uc_units: sum(st('착공신고')), uc_sites: cnt(st('착공신고')),
+      pre_units: sum(st('인가완료')), pre_sites: cnt(st('인가완료')),
+      stall_units: sum(stall), stall_sites: cnt(stall),
+    }];
+  },
+});
+
+dash.calc('byyear', {
+  title: '연도별 인허가·착공·사용승인',
+  description: '인허가일·착공신고일·사용승인일의 연도별 사업장 수와 세대 수',
+  inputs: ['projects'],
+  fn: (projects) => {
+    const n = (v) => Number(String(v || 0).replace(/,/g, '')) || 0;
+    const out = {};
+    const add = (y, k, u) => { if (!y) return; const row = out[y] || (out[y] = { year: y, permit_n: 0, permit_units: 0, start_n: 0, start_units: 0, apr_n: 0, apr_units: 0 }); row[k + '_n'] += 1; row[k + '_units'] += u; };
+    projects.forEach((r) => { const u = n(r.tot); add((r.permit || '').slice(0, 4), 'permit', u); add((r.start || '').slice(0, 4), 'start', u); add((r.apr || '').slice(0, 4), 'apr', u); });
+    return Object.values(out).sort((a, b) => a.year.localeCompare(b.year));
+  },
+});
+
+dash.calc('bygu', {
+  title: '자치구별 단계별 세대',
+  description: '자치구별로 입주·준공·착공신고·인가완료 세대 수와 합계',
+  inputs: ['projects'],
+  fn: (projects) => {
+    const n = (v) => Number(String(v || 0).replace(/,/g, '')) || 0;
+    const out = {};
+    projects.forEach((r) => { const g = out[r.gu] || (out[r.gu] = { gu: r.gu, '입주': 0, '준공': 0, '착공신고': 0, '인가완료': 0, total: 0 }); g[r.stage] += n(r.tot); g.total += n(r.tot); });
+    return Object.values(out).sort((a, b) => b.total - a.total);
+  },
+});
+
+dash.calc('risk', {
+  title: '착공 후 미준공 사업장',
+  description: '단계가 착공신고인 사업장의 착공 경과 연수(원자료 기준월 말일 기준)와 사용승인일 기재 여부',
+  inputs: ['projects', 'basis'],
+  fn: (projects, basis) => {
+    const asOf = basis[0].as_of_ts;
+    return projects.filter((r) => r.stage === '착공신고' && r.start).map((r) => ({
+      no: r.no, gu: r.gu, stn: r.stn, tot: Number(r.tot), start: r.start,
+      years: Math.round((asOf - Date.parse(r.start)) / 31557600000 * 10) / 10,
+      flag: r.apr ? '사용승인 ' + r.apr : '사용승인 전',
+    })).sort((a, b) => b.years - a.years);
+  },
+});
+
+dash.calc('duration', {
+  title: '착공→사용승인 기간',
+  description: '착공 연도별로 사용승인까지 끝난 사업장의 착공→사용승인 기간 중위값(개월)',
+  inputs: ['projects'],
+  fn: (projects) => {
+    const by = {};
+    projects.forEach((r) => { if (!r.start || !r.apr) return; const m = (Date.parse(r.apr) - Date.parse(r.start)) / 2629800000; (by[r.start.slice(0, 4)] ||= []).push(m); });
+    return Object.keys(by).sort().map((y) => { const a = by[y].sort((p, q) => p - q); const mid = a.length % 2 ? a[(a.length - 1) / 2] : (a[a.length / 2 - 1] + a[a.length / 2]) / 2; return { cohort: y, n: a.length, median_months: Math.round(mid * 10) / 10 }; });
+  },
+});
+
+dash.calc('permit_compare', {
+  title: '인허가 건수 비교',
+  description: '연도별 인허가 건수: 서울시 원자료(현존 사업장) vs 언론 보도(당시 집계)',
+  inputs: ['byyear', 'permits_reported'],
+  fn: (byyear, permits_reported) => permits_reported.map((p) => {
+    const y = byyear.find((b) => b.year === String(p.year));
+    const source_n = y ? y.permit_n : 0;
+    return { year: String(p.year), source_n, reported: Number(p.reported), gap: source_n - Number(p.reported) };
+  }),
+});
+
+dash.calc('headline', {
+  title: '요약 문장',
+  description: '인허가 정점 대비 최근 감소와 착공 3년 이상 미준공 물량을 한 문장으로',
+  inputs: ['byyear', 'kpi'],
+  fn: (byyear, kpi) => {
+    const f = (x) => x.toLocaleString('ko-KR');
+    const peak = byyear.reduce((a, b) => (b.permit_units > a.permit_units ? b : a), byyear[0]);
+    const y24 = byyear.find((b) => b.year === '2024') || { permit_units: 0, permit_n: 0 };
+    const k = kpi[0];
+    return [{ text: `인허가는 ${peak.year}년 ${f(peak.permit_n)}곳 · ${f(peak.permit_units)}세대가 정점이었고 2024년에는 ${f(y24.permit_n)}곳 · ${f(y24.permit_units)}세대로 줄었습니다. 공사 중 ${f(k.uc_units)}세대 가운데 ${f(k.stall_units)}세대(${k.stall_sites}곳)는 착공 후 3년이 지나도록 사용승인을 받지 못해, 향후 공급과 PF 상환 모두 이 사업장들에 달려 있습니다.` }];
+  },
+});
+</script>
+
+<script>
+// ---------- KPI · 헤드라인 · 기준일 ----------
+dash.onData(() => {
+  const bs = dash.data('basis');
+  document.querySelectorAll('[data-source="basis"]').forEach((el) => {
+    if (bs.status === 'ok' && bs.data.length) el.textContent = bs.data[0][el.dataset.field];
+  });
+  if (bs.status === 'ok' && /^https:\/\//.test(bs.data[0].pdf_url)) document.getElementById('src-pdf').href = bs.data[0].pdf_url;
+  const k = dash.data('kpi');
+  document.querySelectorAll('[data-source="kpi"]').forEach((el) => {
+    if (k.status === 'ok' && k.data.length) { const v = k.data[0][el.dataset.field]; el.textContent = typeof v === 'number' ? YH.fmt(v) : v; el.classList.remove('dash-skeleton'); }
+    else if (k.status === 'error') { el.textContent = '—'; el.classList.remove('dash-skeleton'); }
+  });
+  const h = dash.data('headline'); const hp = document.querySelector('[data-source="headline"]');
+  if (h.status === 'ok' && h.data.length) { hp.textContent = h.data[0].text; hp.classList.remove('dash-skeleton'); }
+  else if (h.status === 'error') { hp.textContent = ''; hp.classList.remove('dash-skeleton'); }
+});
+</script>
+
+<script>
+// ---------- 연도별 차트 ----------
+(() => {
+  let unit = 'units';
+  const box = document.getElementById('ch-year');
+  document.querySelectorAll('#card-year .yh-seg button').forEach((b) => b.addEventListener('click', () => { unit = b.dataset.unit; document.querySelectorAll('#card-year .yh-seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); draw(); }));
+  const S = [['permit', '인허가'], ['start', '착공신고'], ['apr', '사용승인']];
+  const draw = () => {
+    const d = dash.data('byyear');
+    const bsd = dash.data('basis'); const b = bsd.status === 'ok' ? bsd.data[0] : null;
+    YH.legend(document.getElementById('leg-year'), S.map(([, n], i) => [dash.colors[i], n]));
+    if (d.status === 'error') return YH.failBox(box);
+    if (d.status !== 'ok') return;
+    const rows = d.data; const W = Math.max(280, box.clientWidth), H = 260, m = { t: 12, r: 8, b: 26, l: 8 };
+    box.replaceChildren(); const t = YH.tip(box);
+    const key = (s) => s + '_' + unit;
+    const ymax = d3.max(rows, (r) => d3.max(S, ([s]) => r[key(s)])) || 1;
+    const y = d3.scaleLinear([0, ymax], [H - m.b, m.t]).nice();
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const gy = svg.append('g').call(d3.axisLeft(y).ticks(5).tickSize(0).tickFormat(unit === 'units' ? d3.format('~s') : d3.format('d')));
+    YH.axisClean(gy); let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); }); m.l = lw + 10; gy.attr('transform', `translate(${m.l - 4},0)`); gy.select('.domain').remove();
+    svg.append('g').selectAll('line').data(y.ticks(5)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+    const x0 = d3.scaleBand(rows.map((r) => r.year), [m.l, W - m.r]).paddingInner(0.22).paddingOuter(0.05);
+    const x1 = d3.scaleBand(S.map(([s]) => s), [0, x0.bandwidth()]).padding(0.08);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8)); YH.axisClean(gx);
+    rows.forEach((r) => {
+      const g = svg.append('g').attr('transform', `translate(${x0(r.year)},0)`);
+      S.forEach(([s], i) => { const v = r[key(s)]; g.append('rect').attr('x', x1(s)).attr('width', x1.bandwidth()).attr('y', y(v)).attr('height', Math.max(0, y(0) - y(v))).attr('rx', 3).attr('fill', dash.colors[i]); });
+      g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', m.t).attr('height', H - m.b - m.t).attr('fill', 'transparent')
+        .on('mousemove', (ev) => YH.showTip(box, t, ev, r.year + '년' + (b && r.year === b.year && b.month < 12 ? ` (1~${b.month}월)` : ''), S.map(([s, n], i) => [dash.colors[i], n, YH.fmt(r[key(s)]) + (unit === 'units' ? '세대' : '곳')])))
+        .on('mouseleave', () => YH.hideTip(t));
+    });
+  };
+  dash.onData(draw);
+})();
+</script>
+
+<script>
+// ---------- 자치구 차트 ----------
+(() => {
+  const box = document.getElementById('ch-gu');
+  dash.onData(() => {
+    const d = dash.data('bygu');
+    YH.legend(document.getElementById('leg-gu'), YH.STAGES.map((s) => [YH.stageColor(s), s === '착공신고' ? '공사 중' : s === '인가완료' ? '미착공' : s]));
+    if (d.status === 'error') return YH.failBox(box);
+    if (d.status !== 'ok') return;
+    const rows = d.data; const W = Math.max(280, box.clientWidth), bh = 15, gap = 4, m = { t: 4, r: 52, b: 4, l: 56 };
+    const H = m.t + m.b + rows.length * (bh + gap);
+    box.replaceChildren(); box.style.minHeight = H + 'px'; const t = YH.tip(box);
+    const x = d3.scaleLinear([0, d3.max(rows, (r) => r.total)], [m.l, W - m.r]);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    rows.forEach((r, i) => {
+      const yy = m.t + i * (bh + gap); let acc = 0;
+      svg.append('text').attr('x', m.l - 8).attr('y', yy + bh / 2).attr('dy', '0.35em').attr('text-anchor', 'end').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(r.gu);
+      YH.STAGES.forEach((s) => { const v = r[s]; if (!v) return; svg.append('rect').attr('x', x(acc)).attr('y', yy).attr('width', Math.max(1, x(acc + v) - x(acc) - 1)).attr('height', bh).attr('fill', YH.stageColor(s)).attr('rx', 2); acc += v; });
+      svg.append('text').attr('x', x(r.total) + 6).attr('y', yy + bh / 2).attr('dy', '0.35em').attr('fill', 'var(--color-fg)').style('font-size', 'var(--cds-font-size-caption)').text(YH.fmt(r.total));
+      svg.append('rect').attr('x', 0).attr('y', yy - gap / 2).attr('width', W).attr('height', bh + gap).attr('fill', 'transparent')
+        .on('mousemove', (ev) => YH.showTip(box, t, ev, r.gu + ' · 합계 ' + YH.fmt(r.total) + '세대', YH.STAGES.map((s) => [YH.stageColor(s), s === '착공신고' ? '공사 중' : s === '인가완료' ? '미착공' : s, YH.fmt(r[s])])))
+        .on('mouseleave', () => YH.hideTip(t));
+    });
+  });
+})();
+</script>
+
+<script>
+// ---------- 기간 차트 ----------
+(() => {
+  const box = document.getElementById('ch-dur');
+  dash.onData(() => {
+    const d = dash.data('duration');
+    if (d.status === 'error') return YH.failBox(box);
+    if (d.status !== 'ok') return;
+    const rows = d.data; const W = Math.max(280, box.clientWidth), H = 260, m = { t: 22, r: 8, b: 26, l: 34 };
+    box.replaceChildren(); const t = YH.tip(box);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const y = d3.scaleLinear([0, Math.max(36, d3.max(rows, (r) => r.median_months))], [H - m.b, m.t]).nice();
+    const gy = svg.append('g').attr('transform', `translate(${m.l - 4},0)`).call(d3.axisLeft(y).ticks(4).tickSize(0)); YH.axisClean(gy); gy.select('.domain').remove();
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+    const x = d3.scaleBand(rows.map((r) => r.cohort), [m.l, W - m.r]).padding(0.3);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8)); YH.axisClean(gx);
+    const peak = d3.max(rows, (r) => r.median_months);
+    rows.forEach((r) => {
+      const bw = Math.min(32, x.bandwidth()); const cx = x(r.cohort) + (x.bandwidth() - bw) / 2;
+      svg.append('rect').attr('x', cx).attr('width', bw).attr('y', y(r.median_months)).attr('height', y(0) - y(r.median_months)).attr('rx', 4).attr('fill', r.median_months === peak ? dash.colors[2] : 'var(--cds-chart-muted)');
+      svg.append('text').attr('x', cx + bw / 2).attr('y', y(r.median_months) - 6).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg)').style('font-size', 'var(--cds-font-size-caption)').text(r.median_months.toFixed(1));
+      svg.append('rect').attr('x', x(r.cohort)).attr('width', x.bandwidth()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+        .on('mousemove', (ev) => YH.showTip(box, t, ev, r.cohort + '년 착공', [[null, '중위 기간', r.median_months.toFixed(1) + '개월'], [null, '사용승인 완료', r.n + '곳']]))
+        .on('mouseleave', () => YH.hideTip(t));
+    });
+    svg.append('text').attr('x', m.l).attr('y', 10).attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text('개월');
+  });
+})();
+</script>
+
+<script>
+// ---------- 리스크 표 · 인허가 비교 표 ----------
+dash.onData(() => {
+  const d = dash.data('risk'); const tb = document.querySelector('#tb-risk tbody');
+  if (d.status === 'ok') {
+    tb.replaceChildren(...d.data.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = r.no;
+      const cells = [[r.no, 'n'], [r.gu], [r.stn], [YH.fmt(r.tot), 'n'], [r.start], [r.years.toFixed(1), 'n ' + (r.flag === '사용승인 전' && r.years >= 3 ? 'bad' : r.flag === '사용승인 전' && r.years >= 2.5 ? 'warn' : '')], [r.flag, r.flag === '사용승인 전' ? 'muted' : 'ok']];
+      cells.forEach(([v, c]) => { const td = document.createElement('td'); if (c) td.className = c; td.textContent = v; tr.appendChild(td); });
+      return tr;
+    }));
+  } else if (d.status === 'error') tb.replaceChildren();
+  const p = dash.data('permit_compare'); const pb = document.querySelector('#tb-permit tbody');
+  if (p.status === 'ok') {
+    pb.replaceChildren(...p.data.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = r.year;
+      [[r.year], [YH.fmt(r.source_n), 'n'], [YH.fmt(r.reported), 'n'], [(r.gap > 0 ? '+' : '') + r.gap, 'n ' + (r.gap !== 0 ? 'warn' : 'muted')]].forEach(([v, c]) => { const td = document.createElement('td'); if (c) td.className = c; td.textContent = v; tr.appendChild(td); });
+      return tr;
+    }));
+  }
+});
+</script>
+
+<script>
+// ---------- 경쟁률 차트 ----------
+(() => {
+  const box = document.getElementById('ch-comp');
+  dash.onData(() => {
+    const d = dash.data('competition');
+    if (d.status === 'error') return YH.failBox(box);
+    if (d.status !== 'ok') return;
+    const rows = d.data.map((r) => ({ ...r, rate: r.rate === null || r.rate === '' ? null : Number(r.rate), units: r.units === null || r.units === '' ? null : Number(r.units), order: Number(r.order) })).sort((a, b) => a.order - b.order);
+    const W = Math.max(280, box.clientWidth), H = 260, m = { t: 22, r: 8, b: 40, l: 36 };
+    box.replaceChildren(); const t = YH.tip(box);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => r.rate || 0) * 1.1], [H - m.b, m.t]).nice();
+    const gy = svg.append('g').attr('transform', `translate(${m.l - 4},0)`).call(d3.axisLeft(y).ticks(4).tickSize(0)); YH.axisClean(gy); gy.select('.domain').remove();
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+    const x = d3.scaleBand(rows.map((r) => r.round), [m.l, W - m.r]).padding(0.28);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x).tickSize(0).tickPadding(8)); YH.axisClean(gx);
+    gx.selectAll('text').each(function () { const s = this.textContent; const [a, b] = s.split(' '); d3.select(this).text(null).call((tx) => { tx.append('tspan').attr('x', 0).text(a); tx.append('tspan').attr('x', 0).attr('dy', '1.2em').text(b || ''); }); });
+    const bw = Math.min(32, x.bandwidth());
+    rows.forEach((r) => {
+      const cx = x(r.round) + (x.bandwidth() - bw) / 2;
+      if (r.rate !== null) {
+        svg.append('rect').attr('x', cx).attr('width', bw).attr('y', y(r.rate)).attr('height', y(0) - y(r.rate)).attr('rx', 4).attr('fill', dash.colors[0]);
+        svg.append('text').attr('x', cx + bw / 2).attr('y', y(r.rate) - 6).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg)').style('font-size', 'var(--cds-font-size-caption)').text(r.rate.toFixed(1));
+      } else {
+        const hh = (y(0) - m.t) * 0.35;
+        svg.append('rect').attr('x', cx + 0.5).attr('width', bw - 1).attr('y', y(0) - hh).attr('height', hh).attr('rx', 4).attr('fill', 'none').attr('stroke', 'var(--cds-chart-reference)').attr('stroke-dasharray', '4 3');
+        svg.append('text').attr('x', cx + bw / 2).attr('y', y(0) - hh - 6).attr('text-anchor', 'middle').attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text(YH.fmt(r.units) + '호');
+      }
+      svg.append('rect').attr('x', x(r.round)).attr('width', x.bandwidth()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+        .on('mousemove', (ev) => YH.showTip(box, t, ev, r.round, [[null, '경쟁률', r.rate !== null ? r.rate.toFixed(1) + ' : 1' : '확인 필요'], [null, '공급', r.units !== null ? YH.fmt(r.units) + '호' : '–'], [null, '출처', r.source]]))
+        .on('mouseleave', () => YH.hideTip(t));
+    });
+    svg.append('text').attr('x', m.l).attr('y', 10).attr('fill', 'var(--color-fg-muted)').style('font-size', 'var(--cds-font-size-caption)').text('대 1');
+  });
+})();
+</script>
+
+<script>
+// ---------- 정책 타임라인 ----------
+dash.onData(() => {
+  const d = dash.data('timeline'); const tb = document.querySelector('#tb-policy tbody');
+  if (d.status !== 'ok') { if (d.status === 'error') tb.replaceChildren(); return; }
+  const rows = [...d.data].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const sc = (s) => (s === '완료' ? 'muted' : s === '진행 중' ? 'warn' : '');
+  tb.replaceChildren(...rows.map((r) => {
+    const tr = document.createElement('tr'); tr.dataset.key = r.title;
+    const td = (v, c) => { const e = document.createElement('td'); if (c) e.className = c; if (v instanceof Node) e.appendChild(v); else e.textContent = v; return e; };
+    const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = r.tag;
+    const ttl = document.createElement('b'); ttl.style.fontWeight = 500; ttl.textContent = r.title;
+    let src = document.createTextNode(r.source);
+    if (/^https:\/\//.test(r.url || '')) { src = document.createElement('a'); src.href = r.url; src.target = '_blank'; src.rel = 'noopener noreferrer'; src.textContent = r.source; }
+    tr.append(td(r.date, 'muted'), td(pill), td(ttl), td(r.detail), td(r.status, sc(r.status)), td(src));
+    return tr;
+  }));
+});
+</script>
+
+<script>
+// ---------- 사업장 목록 ----------
+(() => {
+  let sortK = 'no', dir = 1;
+  const q = document.getElementById('q'), fs = document.getElementById('fstage'), cnt = document.getElementById('cnt');
+  const numeric = new Set(['no', 'tot', 'pub', 'pri']);
+  const render = () => {
+    const d = dash.data('projects'); const tb = document.querySelector('#tb-proj tbody');
+    if (d.status !== 'ok') { if (d.status === 'error') tb.replaceChildren(); return; }
+    const text = q.value.trim(); const stage = fs.value;
+    let rows = d.data.filter((r) => (!stage || r.stage === stage) && (!text || [r.gu, r.stn, r.addr].join(' ').includes(text)));
+    rows = rows.sort((a, b) => { const va = numeric.has(sortK) ? YH.num(a[sortK]) : String(a[sortK] || '~'); const vb = numeric.has(sortK) ? YH.num(b[sortK]) : String(b[sortK] || '~'); return (va > vb ? 1 : va < vb ? -1 : 0) * dir; });
+    cnt.textContent = `${YH.fmt(rows.length)}곳 · ${YH.fmt(d3.sum(rows, (r) => YH.num(r.tot)))}세대`;
+    tb.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = r.no;
+      const st = document.createElement('span'); st.className = 'pill'; st.textContent = r.stage; st.style.borderColor = YH.stageColor(r.stage);
+      [[r.no, 'n'], [r.gu], [r.stn], [r.addr, 'muted'], [YH.fmt(YH.num(r.tot)), 'n'], [YH.fmt(YH.num(r.pub)), 'n'], [YH.fmt(YH.num(r.pri)), 'n'], [st], [r.permit || '–'], [r.start || '–'], [r.apr || '–'], [r.move || '–']].forEach(([v, c]) => { const e = document.createElement('td'); if (c) e.className = c; if (v instanceof Node) e.appendChild(v); else e.textContent = v; tr.appendChild(e); });
+      return tr;
+    }));
+    document.querySelectorAll('#tb-proj th').forEach((th) => { const b = th.querySelector('button'); th.setAttribute('aria-sort', b && b.dataset.k === sortK ? (dir === 1 ? 'ascending' : 'descending') : 'none'); });
+  };
+  document.querySelectorAll('#tb-proj th button').forEach((b) => b.addEventListener('click', () => { if (sortK === b.dataset.k) dir = -dir; else { sortK = b.dataset.k; dir = numeric.has(sortK) ? -1 : 1; } render(); }));
+  q.addEventListener('input', render); fs.addEventListener('change', render);
+  dash.onData(render);
+})();
+</script>
+
+<script>
+// ---------- 독립 웹사이트에서만: CSV 내려받기 ----------
+(() => {
+  if (!window.YH_STANDALONE) return;
+  document.querySelector('.yh-dl').hidden = false;
+  document.getElementById('dl-csv').addEventListener('click', () => {
+    const d = dash.data('projects'); if (d.status !== 'ok') return;
+    const cols = [['no', '연번'], ['gu', '자치구'], ['addr', '위치'], ['stn', '지하철역'], ['area', '면적(㎡)'], ['fl', '층수(지하/지상)'], ['park', '주차대수'], ['tot', '합계'], ['pub', '공공'], ['pri', '민간'], ['sale', '분양'], ['stage', '추진단계'], ['permit', '인허가일'], ['start', '착공신고일'], ['apr', '사용승인일'], ['move', '입주일']];
+    const esc = (v) => { const s = v === null || v === undefined ? '' : String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const csv = '﻿' + [cols.map((c) => c[1]).join(','), ...d.data.map((r) => cols.map(([k]) => esc(r[k])).join(','))].join('\r\n');
+    const bs = dash.data('basis'); const tag = bs.status === 'ok' ? bs.data[0].as_of_day.replace(/\./g, '') : '';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `청년안심주택_사업장_${tag}.csv`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  });
+})();
+</script>

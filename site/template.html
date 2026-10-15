@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>서울 청년안심주택 사업 현황</title>
+<meta name="description" content="서울시 청년안심주택(구 역세권 청년주택) 사업장별 인허가·착공·준공·입주 현황, 착공 후 장기 미준공 사업장, 청약 경쟁률, 정책·보증·PF 이슈. 서울시 원자료를 매일 자동 확인합니다.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="서울 청년안심주택 사업 현황">
+<meta property="og:description" content="사업장별 공급 파이프라인 · 장기 미준공 리스크 · 청약 경쟁률 · 정책 이슈 · 매일 자동 갱신">
+<meta property="og:locale" content="ko_KR">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500&display=swap">
+<style>
+:root {
+  color-scheme: light dark;
+  --font-anthropic-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-anthropic-serif: "Noto Serif KR", "Nanum Myeongjo", Georgia, serif;
+  --cds-font-size-caption: 12.5px; --cds-font-size-body: 15px; --cds-font-size-heading: 16.5px; --cds-font-size-title: 30px;
+  --cds-font-weight-medium: 600;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 16px; --cds-gap-lg: 24px; --cds-gap-xl: 36px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 14px; --cds-pad-lg: 20px;
+  --cds-radius: 10px; --cds-dur-slow: 400ms;
+  --color-bg: #f7f6f3; --color-panel: #ffffff; --color-fg: #1d1d1b; --color-fg-muted: #6b6a66; --color-border-line: #e3e1db;
+  --color-ok: #2f7d4f; --color-warn: #a86411; --color-bad: #c2362f;
+  --cds-chart-grid: #ecebe6; --cds-chart-axis: #c9c7bf; --cds-chart-muted: #cfcdc6; --cds-chart-reference: #9a988f;
+  --cds-surface-popover: #ffffff; --cds-border: #dddbd4; --cds-shadow-popover: 0 6px 20px rgba(0,0,0,.12); --cds-text-secondary: #6b6a66;
+  --series-0: #2f6fdb; --series-1: #2a9d8f; --series-2: #e07b39; --series-3: #9b6bd3; --series-4: #d4567a; --series-5: #7a8a99; --series-6: #c9a227; --series-7: #4aa3c9;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #161615; --color-panel: #1f1f1d; --color-fg: #ecebe6; --color-fg-muted: #a3a19a; --color-border-line: #33322f;
+    --color-ok: #6cc28c; --color-warn: #e3a556; --color-bad: #f07a72;
+    --cds-chart-grid: #2a2a27; --cds-chart-axis: #4a4945; --cds-chart-muted: #4a4945; --cds-chart-reference: #8a887f;
+    --cds-surface-popover: #262624; --cds-border: #3a3936; --cds-shadow-popover: 0 6px 20px rgba(0,0,0,.5); --cds-text-secondary: #a3a19a;
+    --series-0: #6b9cf0; --series-1: #4fc2b3; --series-2: #f09a5c; --series-3: #b996e6; --series-4: #e8809f; --series-5: #9aa9b7; --series-6: #e0bf4f; --series-7: #74c0de;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
+body { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); -webkit-text-size-adjust: 100%; }
+#dash-root { padding: clamp(20px, 4vw, 48px) var(--dash-gutter, 16px) 48px; }
+.dash-skeleton { color: transparent !important; position: relative; }
+.dash-skeleton::after { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: min(100%, 12rem); height: .8em; border-radius: 6px; background: var(--color-border-line); animation: yhpulse 1.2s ease-in-out infinite; }
+@keyframes yhpulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .dash-skeleton::after { animation: none; } }
+</style>
+<script>
+window.YH_STANDALONE = true;
+window.YH_DATASETS = {
+  projects: 'data/projects.json',
+  meta: 'data/meta.json',
+  competition: 'data/competition.json',
+  timeline: 'data/timeline.json',
+  permits_reported: 'data/permits_reported.json'
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script src="dash-shim.js?v={{BUILD}}"></script>
+</head>
+<body>
+<main id="dash-root">
+{{PAGE}}
+</main>
+</body>
+</html>
