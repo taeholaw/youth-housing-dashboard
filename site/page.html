@@ -20,6 +20,13 @@
 .yh-card .note { margin: 0; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.5; }
 .yh-chart { position: relative; min-height: 260px; }
 .yh-chart.tall { min-height: 420px; }
+.yh-mapbox { min-height: 340px; }
+.yh-mapbar { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: center; justify-content: space-between; }
+.yh-map-gu { fill: var(--color-bg); stroke: var(--color-border-line); stroke-width: 1; }
+.yh-map-gu.on { fill: var(--cds-chart-grid); }
+.yh-map-gulabel { fill: var(--color-fg-muted); font-size: 10.5px; pointer-events: none; paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; stroke-linejoin: round; }
+.yh-map-pt { cursor: pointer; transition: opacity .15s; }
+.yh-map-pt:hover { opacity: 1 !important; }
 .yh-chart svg text { font-family: var(--font-anthropic-sans); }
 .yh-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 5; display: none; }
 .yh-tip .t { color: var(--cds-text-secondary); margin-bottom: 2px; }
@@ -74,6 +81,19 @@
     <div class="yh-kpi"><span class="lbl">공사 중 (착공신고)</span><span class="val dash-skeleton" data-source="kpi" data-field="uc_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="uc_sites" data-row="0"></b>개 사업장</span></div>
     <div class="yh-kpi"><span class="lbl">착공 3년 이상 · 사용승인 전</span><span class="val bad dash-skeleton" data-source="kpi" data-field="stall_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="stall_sites" data-row="0"></b>개 사업장 · 기준일 <span data-source="basis" data-field="as_of_day" data-row="0">—</span></span></div>
     <div class="yh-kpi"><span class="lbl">인가 후 미착공</span><span class="val dash-skeleton" data-source="kpi" data-field="pre_units" data-row="0"></span><span class="sub"><b data-source="kpi" data-field="pre_sites" data-row="0"></b>개 사업장</span></div>
+  </section>
+
+  <section class="yh-sec" id="map">
+    <h2>사업장 위치</h2>
+    <p>원 크기는 세대 수, 색은 사업 단계입니다. 붉은 테두리는 착공 후 3년이 지나도록 사용승인 전인 사업장입니다. 원을 누르면 아래 사업장 목록에서 해당 사업장을 찾아 줍니다.</p>
+    <div class="yh-card" id="card-map">
+      <div class="yh-mapbar">
+        <div class="yh-legend" id="leg-map"></div>
+        <div class="yh-seg" role="group" aria-label="단계 필터" id="map-filter"></div>
+      </div>
+      <div class="yh-chart yh-mapbox" id="ch-map" data-source="map_points gu_shapes"></div>
+      <p class="note" id="map-note">위치는 사업장이 속한 지하철역 좌표 기준입니다(역세권 사업이라 대부분 역에서 250m 안쪽). 같은 역을 쓰는 사업장은 역 둘레에 나눠 그렸으며, 역 이름이 없거나 아직 개통 전인 계획역(동북선·신안산선 등) 사업장 8곳은 법정동 중심점에 표시했습니다. 정확한 대지 위치는 주소로 확인하십시오.</p>
+    </div>
   </section>
 
   <section class="yh-sec" id="pipeline">
@@ -579,5 +599,70 @@ dash.onData(() => {
     const bs = dash.data('basis'); const tag = bs.status === 'ok' ? bs.data[0].as_of_day.replace(/\./g, '') : '';
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `청년안심주택_사업장_${tag}.csv`; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   });
+})();
+</script>
+
+<script>
+// ---------- 사업장 위치 지도 ----------
+dash.calc('map_points', {
+  title: '지도 표시용 사업장 위치',
+  description: '사업장 목록에 위치(역 또는 법정동 기준 좌표)와 착공 3년 이상 미준공 여부를 붙인 표',
+  inputs: ['projects', 'locations', 'basis'],
+  fn: (projects, locations, basis) => {
+    const asOf = basis[0].as_of_ts;
+    const loc = new Map(locations.map((l) => [String(l.no), l]));
+    return projects.filter((p) => loc.has(String(p.no))).map((p) => {
+      const l = loc.get(String(p.no));
+      const stall = p.stage === '착공신고' && !!p.start && !p.apr && (asOf - Date.parse(p.start)) / 31557600000 >= 3;
+      return { no: Number(p.no), gu: p.gu, stn: p.stn, addr: p.addr, tot: Number(p.tot), stage: p.stage, start: p.start || '', apr: p.apr || '', lat: Number(l.lat), lon: Number(l.lon), basis: l.basis, stall };
+    });
+  },
+});
+
+(() => {
+  const box = document.getElementById('ch-map');
+  const label = (s) => (s === '착공신고' ? '공사 중' : s === '인가완료' ? '미착공' : s);
+  const on = new Set(YH.STAGES);
+  const fbox = document.getElementById('map-filter');
+  fbox.replaceChildren(...YH.STAGES.map((s) => { const b = document.createElement('button'); b.type = 'button'; b.dataset.stage = s; b.setAttribute('aria-pressed', 'true'); b.textContent = label(s); b.addEventListener('click', () => { if (on.has(s) && on.size > 1) on.delete(s); else on.add(s); draw(); }); return b; }));
+  const draw = () => {
+    fbox.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(on.has(b.dataset.stage))));
+    const leg = document.getElementById('leg-map');
+    YH.legend(leg, YH.STAGES.map((s) => [YH.stageColor(s), label(s)]));
+    const ring = document.createElement('span'); const ri = document.createElement('i'); ri.style.background = 'transparent'; ri.style.border = '2px solid var(--color-bad)'; ri.style.borderRadius = '50%'; ring.append(ri, document.createTextNode('착공 3년+ 미준공')); leg.appendChild(ring);
+    const pts = dash.data('map_points'), gu = dash.data('gu_shapes');
+    if (pts.status === 'error' || gu.status === 'error') return YH.failBox(box);
+    if (pts.status !== 'ok' || gu.status !== 'ok') return;
+    const W = Math.max(280, box.clientWidth), H = Math.round(Math.max(320, Math.min(640, W * 0.74)));
+    box.replaceChildren(); box.style.minHeight = H + 'px'; const t = YH.tip(box);
+    const fc = { type: 'FeatureCollection', features: gu.data };
+    const proj = d3.geoMercator().fitExtent([[8, 8], [W - 8, H - 8]], fc);
+    const path = d3.geoPath(proj);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const rows = pts.data.filter((p) => on.has(p.stage));
+    const byGu = d3.rollup(rows, (v) => d3.sum(v, (d) => d.tot), (d) => d.gu);
+    svg.append('g').selectAll('path').data(gu.data).join('path').attr('class', (f) => 'yh-map-gu' + (byGu.has(f.properties.name) ? ' on' : '')).attr('d', path);
+    if (W >= 420) svg.append('g').selectAll('text').data(gu.data).join('text').attr('class', 'yh-map-gulabel').attr('text-anchor', 'middle').attr('transform', (f) => `translate(${path.centroid(f)})`).text((f) => f.properties.name);
+    const r = d3.scaleSqrt([0, d3.max(pts.data, (d) => d.tot)], [0, W < 500 ? 11 : 17]);
+    const g = svg.append('g');
+    rows.sort((a, b) => b.tot - a.tot).forEach((p) => {
+      const [x, y] = proj([p.lon, p.lat]);
+      const c = g.append('circle').attr('class', 'yh-map-pt').attr('cx', x).attr('cy', y).attr('r', Math.max(2.5, r(p.tot)))
+        .attr('fill', YH.stageColor(p.stage)).attr('fill-opacity', 0.72)
+        .attr('stroke', p.stall ? 'var(--color-bad)' : 'var(--color-panel)').attr('stroke-width', p.stall ? 2.5 : 1);
+      c.on('mousemove', (ev) => YH.showTip(box, t, ev, `연번 ${p.no} · ${p.gu} ${p.stn}`, [
+        [YH.stageColor(p.stage), label(p.stage), YH.fmt(p.tot) + '세대'],
+        [null, '위치', p.addr],
+        [null, p.apr ? '사용승인' : '착공신고', p.apr || p.start || '–'],
+        [null, '지도 기준', p.basis === '역' ? '지하철역' : '법정동 중심'],
+      ])).on('mouseleave', () => YH.hideTip(t))
+        .on('click', () => { const q = document.getElementById('q'); const fs = document.getElementById('fstage'); fs.value = ''; q.value = p.addr; q.dispatchEvent(new Event('input')); document.getElementById('list').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    });
+    const shown = rows.length, total = pts.data.length;
+    let cap = box.querySelector('.yh-mapcap'); cap = document.createElement('div'); cap.className = 'yh-mapcap'; cap.style.cssText = 'position:absolute;left:8px;bottom:6px;font-size:var(--cds-font-size-caption);color:var(--color-fg-muted)';
+    cap.textContent = `${YH.fmt(shown)}곳 · ${YH.fmt(d3.sum(rows, (d) => d.tot))}세대 표시` + (total < dash.data('projects').data.length ? ` (위치 미확정 ${dash.data('projects').data.length - total}곳 제외)` : '');
+    box.appendChild(cap);
+  };
+  dash.onData(draw);
 })();
 </script>
