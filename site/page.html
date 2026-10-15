@@ -27,6 +27,12 @@
 .yh-map-gulabel { fill: var(--color-fg-muted); font-size: 10.5px; pointer-events: none; paint-order: stroke; stroke: var(--color-panel); stroke-width: 3px; stroke-linejoin: round; }
 .yh-map-pt { cursor: pointer; transition: opacity .15s; }
 .yh-map-pt:hover { opacity: 1 !important; }
+.yh-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: var(--cds-gap-sm); counter-reset: st; }
+.yh-flow li { position: relative; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); display: grid; gap: 6px; align-content: start; background: var(--color-bg); counter-increment: st; }
+.yh-flow li::before { content: counter(st); position: absolute; top: 10px; right: 12px; font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); color: var(--color-fg-muted); }
+.yh-flow b { font-weight: var(--cds-font-weight-medium); padding-right: 1.4em; }
+.yh-flow span { font-size: var(--cds-font-size-caption); line-height: 1.5; }
+.yh-flow em { font-style: normal; font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.5; }
 .yh-chart svg text { font-family: var(--font-anthropic-sans); }
 .yh-tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 5; display: none; }
 .yh-tip .t { color: var(--cds-text-secondary); margin-bottom: 2px; }
@@ -169,6 +175,40 @@
           <thead><tr><th data-field="date">시점</th><th data-field="tag">분야</th><th data-field="title">항목</th><th data-field="detail">내용</th><th data-field="status">상태</th><th data-field="source">출처</th></tr></thead>
           <tbody></tbody>
         </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="yh-sec" id="finance">
+    <h2>사업 · 금융 구조와 임대조건</h2>
+    <p>청년안심주택은 역세권 용도지역 상향을 받는 대신 일정 기간 시세보다 낮게 임대해야 하는 구조라, 금융은 단계마다 상환 재원이 달라집니다.</p>
+    <div class="yh-card" id="card-flow">
+      <h3>사업 단계별 자금과 상환 재원</h3>
+      <p class="note">일반적인 민간임대분 기준의 흐름입니다. 사업장마다 공공임대분 비중과 금융 구조가 다릅니다.</p>
+      <ol class="yh-flow">
+        <li><b>사업계획 승인</b><span>역세권 용도지역 상향 · 용적률 인센티브</span><em>대가: 공공임대분 확보, 임대료 상한 · 의무임대</em></li>
+        <li><b>착공 ~ 준공 (PF)</b><span>토지비 · 공사비 PF, 서울시 건설자금 이차보전</span><em>위험: 공사비 · 금리 상승, 준공 지연</em></li>
+        <li><b>준공 직후</b><span>공공임대분 SH 매입, 입주자 모집과 임대보증금 유입</span><em>전제: 임대보증금 보증 가입</em></li>
+        <li><b>임대 운영 (담보대출)</b><span>PF를 장기 담보대출로 대환</span><em>상환 능력: 임대료 순수입, 이차보전 지원</em></li>
+        <li><b>의무임대 종료 후</b><span>임대료 정상화 · 통매각 · 분양</span><em>상환: 매각대금 · 분양수입금</em></li>
+      </ol>
+    </div>
+    <div class="yh-grid">
+      <div class="yh-card" id="card-rules">
+        <h3>임대조건 · 보증 · 금융지원 규칙</h3>
+        <p class="note">현금흐름과 상환 가정에 직접 들어가는 항목입니다. 공고문 · 서울시 발표 · 언론 보도 기준이며 출처에서 원문을 확인하십시오.</p>
+        <div class="yh-tbox" style="max-height:520px">
+          <table id="tb-rules" data-source="rules" data-row-key="item">
+            <thead><tr><th data-field="group">구분</th><th data-field="item">항목</th><th data-field="value">기준</th><th data-field="source">출처</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="yh-card" id="card-leaseend">
+        <h3>의무임대 종료 도래 물량</h3>
+        <p class="note">입주 · 준공 사업장의 입주일(없으면 사용승인일)에 8년과 10년을 더한 연도별 세대 수입니다. 이 시점부터 임대료 정상화 · 매각 · 리파이낸싱 수요가 생깁니다. 실제 의무임대 기간은 사업장별 등록 시점에 따라 다릅니다.</p>
+        <div class="yh-legend" id="leg-le"></div>
+        <div class="yh-chart" id="ch-le" data-source="lease_end"></div>
       </div>
     </div>
   </section>
@@ -664,5 +704,68 @@ dash.calc('map_points', {
     box.appendChild(cap);
   };
   dash.onData(draw);
+})();
+</script>
+
+<script>
+// ---------- 임대조건 규칙 표 · 의무임대 종료 도래 물량 ----------
+dash.calc('lease_end', {
+  title: '의무임대 종료 도래 물량',
+  description: '입주·준공 사업장의 입주일(없으면 사용승인일) + 8년 / + 10년 연도별 세대 수',
+  inputs: ['projects'],
+  fn: (projects) => {
+    const out = {};
+    const add = (y, k, u) => { const r = out[y] || (out[y] = { year: String(y), units_8: 0, units_10: 0 }); r[k] += u; };
+    projects.filter((p) => (p.stage === '입주' || p.stage === '준공') && (p.move || p.apr)).forEach((p) => {
+      const y = Number(String(p.move || p.apr).slice(0, 4)); const u = Number(p.tot) || 0;
+      add(y + 8, 'units_8', u); add(y + 10, 'units_10', u);
+    });
+    return Object.values(out).sort((a, b) => a.year.localeCompare(b.year));
+  },
+});
+
+dash.onData(() => {
+  const d = dash.data('rules'); const tb = document.querySelector('#tb-rules tbody');
+  if (d.status === 'ok') {
+    const rows = [...d.data].sort((a, b) => Number(a.order) - Number(b.order));
+    tb.replaceChildren(...rows.map((r) => {
+      const tr = document.createElement('tr'); tr.dataset.key = r.item;
+      const td = (v, c) => { const e = document.createElement('td'); if (c) e.className = c; if (v instanceof Node) e.appendChild(v); else e.textContent = v; return e; };
+      const pill = document.createElement('span'); pill.className = 'pill'; pill.textContent = r.group;
+      const it = document.createElement('div'); const b = document.createElement('b'); b.style.fontWeight = 500; b.textContent = r.item; const sm = document.createElement('div'); sm.className = 'muted'; sm.style.marginTop = '2px'; sm.textContent = r.detail; it.append(b, sm);
+      let src = document.createTextNode(r.source);
+      if (/^https:\/\//.test(r.url || '')) { src = document.createElement('a'); src.href = r.url; src.target = '_blank'; src.rel = 'noopener noreferrer'; src.textContent = r.source; }
+      tr.append(td(pill), td(it), td(r.value), td(src, 'muted'));
+      return tr;
+    }));
+  } else if (d.status === 'error') tb.replaceChildren();
+});
+
+(() => {
+  const box = document.getElementById('ch-le');
+  const S = [['units_8', '8년 가정'], ['units_10', '10년 가정']];
+  dash.onData(() => {
+    YH.legend(document.getElementById('leg-le'), S.map(([, n], i) => [dash.colors[i === 0 ? 2 : 0], n]));
+    const d = dash.data('lease_end');
+    if (d.status === 'error') return YH.failBox(box);
+    if (d.status !== 'ok') return;
+    const rows = d.data; const W = Math.max(280, box.clientWidth), H = 260, m = { t: 12, r: 8, b: 26, l: 8 };
+    box.replaceChildren(); const t = YH.tip(box);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => Math.max(r.units_8, r.units_10)) || 1], [H - m.b, m.t]).nice();
+    const gy = svg.append('g').call(d3.axisLeft(y).ticks(4).tickSize(0).tickFormat(d3.format('~s'))); YH.axisClean(gy);
+    let lw = 0; gy.selectAll('text').each(function () { lw = Math.max(lw, this.getComputedTextLength()); }); m.l = lw + 10; gy.attr('transform', `translate(${m.l - 4},0)`); gy.select('.domain').remove();
+    svg.append('g').selectAll('line').data(y.ticks(4)).join('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', (v) => y(v)).attr('y2', (v) => y(v)).attr('stroke', 'var(--cds-chart-grid)');
+    const x0 = d3.scaleBand(rows.map((r) => r.year), [m.l, W - m.r]).paddingInner(0.22).paddingOuter(0.05);
+    const x1 = d3.scaleBand(S.map(([k]) => k), [0, x0.bandwidth()]).padding(0.08);
+    const gx = svg.append('g').attr('transform', `translate(0,${H - m.b})`).call(d3.axisBottom(x0).tickSize(0).tickPadding(8).tickFormat((v) => (x0.bandwidth() < 34 ? "'" + v.slice(2) : v))); YH.axisClean(gx);
+    rows.forEach((r) => {
+      const g = svg.append('g').attr('transform', `translate(${x0(r.year)},0)`);
+      S.forEach(([k], i) => { const v = r[k]; g.append('rect').attr('x', x1(k)).attr('width', x1.bandwidth()).attr('y', y(v)).attr('height', Math.max(0, y(0) - y(v))).attr('rx', 3).attr('fill', dash.colors[i === 0 ? 2 : 0]); });
+      g.append('rect').attr('x', 0).attr('width', x0.bandwidth()).attr('y', m.t).attr('height', H - m.b - m.t).attr('fill', 'transparent')
+        .on('mousemove', (ev) => YH.showTip(box, t, ev, r.year + '년 의무임대 종료', S.map(([k, n], i) => [dash.colors[i === 0 ? 2 : 0], n, YH.fmt(r[k]) + '세대'])))
+        .on('mouseleave', () => YH.hideTip(t));
+    });
+  });
 })();
 </script>
