@@ -1,12 +1,12 @@
 {
-  "checked_at": "2026-10-15T09:33:27+09:00",
+  "checked_at": "2026-11-03T08:33:57+09:00",
   "source_page": "https://news.seoul.go.kr/citybuild/archives/502414",
-  "pdf_url": "https://news.seoul.go.kr/citybuild/files/2019/02/6aa397a340e3f5.84658097.pdf",
-  "pdf_title": "청년안심주택(구 역세권 청년주택) 사업추진현황(2026.8월말 기준)",
-  "pdf_sha256": "abb3090ef5997ecc5b7e5f165ac57e598488354009ff5c0ad4859debae6d8010",
-  "as_of_month": "2026-08",
-  "updated_at": "2026-10-15T09:29:21+09:00",
+  "pdf_url": "https://news.seoul.go.kr/citybuild/files/2019/02/6ae827083b3d90.77978980.pdf",
+  "pdf_title": "청년안심주택(구 역세권 청년주택) 사업추진현황(2026.10월말 기준)",
+  "pdf_sha256": "cabdae9963b66299c217261fe2395e7d211179c1052501e070eda7eef59b41f9",
+  "as_of_month": "2026-10",
+  "updated_at": "2026-11-03T08:33:57+09:00",
   "rows": 135,
   "units": 46602,
-  "last_result": "unchanged"
+  "last_result": "updated"
 }
